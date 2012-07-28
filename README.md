@@ -1,7 +1,7 @@
 Forge
 =====
 
-Put a smile on your workflow with template-based generators for node
+Put a smile on your workflow with template-based generators for node. [Why?](http://blog.rjzaworski.com/2012/07/forge-template-generators-for-node-js/)
 
 Using Forge
 ----------------
