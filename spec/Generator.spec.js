@@ -61,18 +61,33 @@ describe('Generator', function () {
 
         it('reverses templating on destroy', function () {
             
-            var child = new (Generator.extend({
+            var generator;
+
+            var methods = ['template', 'foobar'],
+                spy = jasmine.createSpy(),
+                stub = function () {};
+
+            var props = {
                 key: 'child',
                 create: function () {
                     this.template(a, b, c);
+                    this.foobar(a, b, c);
                 }
-            }));
+            };
 
-            spyOn(child, 'untemplate');
+            methods.forEach(function (key) {
+              props[key] = stub;
+              props['un' + key] = spy;
+            });
 
-            child.destroy();
+            generator = new (Generator.extend(props));
+            generator.destroy();
 
-            expect(child.untemplate).toHaveBeenCalledWith(a, b, c)
+            expect(spy.callCount).toEqual(methods.length);
+
+            methods.forEach(function (key) {
+                expect(generator[key]).toEqual(stub);
+            });
         });
     });
 });

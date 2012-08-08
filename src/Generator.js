@@ -174,16 +174,26 @@ var Generator = function () {
      */
     Generator.prototype.destroy = function (name, options) {
 
-        var originals = {};
+        var methods = [],
+            originals = {};
 
-        // FIXME: this shouldn't be hard-coded
-        ['template'].forEach(function (key) {
+        // find all "un-" methods in the current generator
+        for (var m in this) {
+            if (typeof(this[m]) == 'function' && m.match(/^un/)) {
+                methods.push(m.substr(2));
+            }
+        }
+
+        // replace all create methods with their corresponding "un-"s
+        methods.forEach(function (key) {
             originals[key] = this[key];
             this[key] = this['un' + key];
         }, this);
 
+        // invoke create on the monkey-patched "un-"s
         this.create(name, options);
 
+        // set everything back as it was before
         for (key in originals) {
             this[key] = originals[key];
         }
