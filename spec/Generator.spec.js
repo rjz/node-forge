@@ -13,30 +13,62 @@ describe('Generator', function () {
         expect(child instanceof Generator).toBeTruthy();
     });
 
-    it('queues methods', function () {
+    describe('queue', function () {
 
-        var a = 'a',
-            b = 'b',
-            c = 'c';
+		var a = 'a',
+			b = 'b',
+			c = 'c';
 
-        var spy = jasmine.createSpy();
+		var spy, child;
 
-        var child = new (Generator.extend({ 
-            key: 'child',
-            create: function () {
-                this.foobar(a, b, c);
-            },
-            foobar: function (a, b, c) {
-                this.queue(function () {
-                  spy(a, b, c);
-                });
-            }
-        }));
+		beforeEach(function() {
+			spy = jasmine.createSpy();
 
-        child.create();
-        child.run();
+			child = new (Generator.extend({ 
+				key: 'child',
+				create: function () {
+					this.foo(a, b, c);
+					this.bar(c, b, a);
+				},
+				foo: function (a, b, c) {
+					this.queue(function (result) {
+					  spy(a, b, c);
+					  result();
+					});
+				},
+				bar: function (c, b, a) {
+					this.queue(function (result) {
+					  expect(spy).toHaveBeenCalledWith(a, b, c);
+					  spy(c, b, a);
+					  result();
+					});
+				}
+			}));
+		});
 
-        expect(spy).toHaveBeenCalledWith(a, b, c);
+		it('queues methods', function () {
+			child.create();
+			expect(child.q.length).toEqual(2);
+
+			child.run();
+			expect(spy).toHaveBeenCalledWith(c, b, a);
+			expect(spy.callCount).toEqual(2);
+		});
+
+		it('stops running on error', function () {
+			child.foo = function (a, b, c) {
+				this.queue(function (result) {
+					spy(a, b, c);
+					result('error!');
+				});
+			};
+
+			child.create();
+			expect(child.q.length).toEqual(2);
+
+			child.run();
+			expect(spy.callCount).toEqual(1);
+		});
     });
 
     it('can invoke other generators', function () {

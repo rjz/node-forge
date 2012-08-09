@@ -9,7 +9,7 @@
   }
 , "repository": {
     "type": "git"
-  , "url": "github.com/rjz/forge"
+  , "url": "https://github.com/rjz/node-forge"
   }
 , "keywords": [
     "generator"
