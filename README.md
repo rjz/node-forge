@@ -28,10 +28,7 @@ In its simplest form, a generator will extend the `Generator` class with a `key`
     // generators/foo/foo.js
     var Generator = require('./../../src/Generator');
 
-    /**
-     *	A generator for creating other generators
-     *	@extends	{Generator}
-     */
+    //	A generator for creating other generators
     module.exports = Generator.extend({
         key: 'foo',
         create: function (name, options) {
