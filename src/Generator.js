@@ -1,5 +1,7 @@
 var _ = require('underscore')
-  , fs = require('fs');
+  , async = require('async')
+  , fs = require('fs')
+;
 
 /**
  *  Generator base class
@@ -21,6 +23,19 @@ var Generator = function () {
     function Generator () {};
 
     /**
+     *  Add a method to the generator's operating queue
+     *  @param  {Function}  callback    the method to add
+     */
+    Generator.prototype.queue = function (callback) {
+
+        if (!(this.q instanceof Array)) {
+            this.q = [];
+        }
+
+        this.q.push(callback);
+    }
+
+    /**
      *  Prints a notice to the command line
      *  @param  {String}    message the notice to print
      */
@@ -38,6 +53,14 @@ var Generator = function () {
     };
 
     /**
+     *  Prints a success message to the command line
+     *  @param  {String}    message the message to print
+     */
+    Generator.prototype.success = function (message) {
+        console.log(_prefix(this) + (message || '[no message]'));
+    };
+
+    /**
      *  Invokes a new generator instance
      *  @param  {String}    action           the generator action to invoke (create|destroy)
      *  @param  {String}    generatorName    the name of the generator to invoke
@@ -47,12 +70,21 @@ var Generator = function () {
     Generator.prototype.invoke = function (action, generatorName, name, options) {
 
         var generator = _children[generatorName];
+        
+        this.queue(function (result) {
 
-        if (generator && generator.prototype[action]) {
-            return (new generator)[action](name, options);
-        }
+            var gentoo = null;
 
-        this.error('Failed invoking ' + name + ':' + action);
+            if (generator && generator.prototype[action]) {
+                gentoo = new _children[generatorName];
+                gentoo.level = 1;
+                gentoo[action](name, options);
+                gentoo.run();
+                result();
+            }
+
+            result('Failed invoking ' + name + ':' + action);
+        });
     };
 
     /**
@@ -84,31 +116,35 @@ var Generator = function () {
         var obj = _.clone(subject || {}),
             self = this;
 
-        if (!_.isObject(obj)) {
-            this.error('Template subjects must be instances of [Object]');
-        }
+        this.queue(function (result) {
 
-        fs.readFile(this.templateDir() + '/' + src, function (err, content) {
-
-            if (err) {
-                self.error('Failed reading template at ' + src);
+            if (!_.isObject(obj)) {
+                return result('Template subjects must be instances of [Object]');
             }
 
-            content = content.toString();
+            fs.readFile(self.templateDir() + '/' + src, function (err, content) {
 
-            if (content != '') {
-                content = _.template(content, obj);
-            }
-
-            fs.exists(dst, function (exists) {
-                if (exists) {
-                    self.error('Destination file ' + dst + ' exists. Please resolve conflict.');
+                if (err) {
+                    return result('Failed reading template at ' + src);
                 }
 
-                fs.writeFile(dst, content);
-                self.notice('Created ' + dst)
+                content = content.toString();
+
+                if (content != '') {
+                    content = _.template(content, obj);
+                }
+
+                fs.exists(dst, function (exists) {
+                    if (exists) {
+                        return result('Destination file ' + dst + ' exists. Please resolve conflict.');
+                    }
+
+                    fs.writeFile(dst, content);
+                    self.success('Created ' + dst)
+                    result(null);
+                });
+                
             });
-            
         });
     };
 
@@ -119,12 +155,19 @@ var Generator = function () {
      *  @param  {Object}    subject the object to use for populating template
      */
     Generator.prototype.untemplate = function (src, dst, subject) {
+
         var self = this;
-        fs.exists(dst, function (exists) {
-            if (exists) {
-                fs.unlink(dst);
-                self.notice('Removed ' + dst)
-            }
+
+        this.queue(function (result) {
+            fs.exists(dst, function (exists) {
+                if (exists) {
+                    fs.unlink(dst);
+                    self.success('Removed ' + dst)
+                    result();
+                } else {
+                    result('Failed deleting ' + dst);
+                }
+            });
         });
     };
 
@@ -133,15 +176,21 @@ var Generator = function () {
      *  @param  {String}    path the path to the directory to create
      */
     Generator.prototype.mkdir = function (path) {
+
         var self = this;
-        fs.exists(path, function (exists) {
-            if (exists) {
-                self.error(path + ' exists. Please resolve this manually.');
-            } else {
-                // FIXME: handle errors
-                fs.mkdir(path);
-                self.notice('Created directory ' + path)
-            }
+        
+        this.queue(function (result) {
+
+            fs.exists(path, function (exists) {
+                if (exists) {
+                    result(path + ' exists. Please resolve this manually.');
+                } else {
+                    // FIXME: handle errors
+                    fs.mkdir(path);
+                    self.success('Created directory ' + path)
+                    result();
+                }
+            });
         });
     };
 
@@ -152,20 +201,37 @@ var Generator = function () {
      *  @param  {String}    path the path to the directory to remove    
      */
     Generator.prototype.unmkdir = function (path) {
-        fs.exists(path, function (exists) {
-            if (exists) {
-                fs.rmdir(path);
-                self.notice('Removed ' + dst)
-            }
+        
+        var self = this;
+        
+        this.queue(function (result) {
+            fs.exists(path, function (exists) {
+                if (exists) {
+                    fs.rmdir(path);
+                    self.success('Removed ' + path);
+                    result();
+                } else {
+                    result('Failed removing ' + path);
+                }
+            });
         });
     };
 
     /**
-     *  Override in generator to create new files
+     *  Override in generator to define "create" action
      *  @param  {String}    name    the name of the object being generated
      *  @param  {Object}    options a list of options being passed to the generator
      */
     Generator.prototype.create = function (name, options) {};
+
+    /**
+     *  Execute all methods in the generator's operating queue
+     */
+    Generator.prototype.run = function () {
+        if (this.q instanceof Array) {
+            async.series(this.q);
+        }
+    };
 
     /**
      *  Reverse actions taken by `create`. Override in generator for more control

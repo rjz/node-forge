@@ -1,6 +1,6 @@
 var _          = require('underscore')
   , Generator  = require('./src/Generator')
-  ;
+;
 
 var generators = require('./generators/all');
 
@@ -8,7 +8,12 @@ var generators = require('./generators/all');
 (function () {
 
  	var _error = _.bind(Generator.prototype.error, {key: 'Generator'})
-	var generatorAction, generatorName, objectName, objectOptions, argv;
+	var generatorAction, 
+      generatorName, 
+      generator,
+      objectName, 
+      objectOptions, 
+      argv;
 
 	// extract command line arguments
 	argv = process.argv.slice(2);
@@ -26,7 +31,9 @@ var generators = require('./generators/all');
 
 	if (_.include(['create','destroy'], generatorAction)) {
 		if (_.has(generators, generatorName)) {
-			generators[generatorName][generatorAction](objectName, objectOptions);
+      generator = generators[generatorName]
+      generator[generatorAction](objectName, objectOptions);
+      generator.run();
 		} else {
 			_error('unknown generator "' + generatorName + '"');
 		}

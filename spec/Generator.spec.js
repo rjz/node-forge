@@ -1,4 +1,6 @@
-Generator = require('../src/Generator');
+Generator = require('../src/Generator')
+  , async = require('async')
+;
 
 describe('Generator', function () {
 
@@ -9,6 +11,32 @@ describe('Generator', function () {
         }));
 
         expect(child instanceof Generator).toBeTruthy();
+    });
+
+    it('queues methods', function () {
+
+        var a = 'a',
+            b = 'b',
+            c = 'c';
+
+        var spy = jasmine.createSpy();
+
+        var child = new (Generator.extend({ 
+            key: 'child',
+            create: function () {
+                this.foobar(a, b, c);
+            },
+            foobar: function (a, b, c) {
+                this.queue(function () {
+                  spy(a, b, c);
+                });
+            }
+        }));
+
+        child.create();
+        child.run();
+
+        expect(spy).toHaveBeenCalledWith(a, b, c);
     });
 
     it('can invoke other generators', function () {
@@ -30,6 +58,7 @@ describe('Generator', function () {
         });
 
         childA.create();
+        childA.run();
 
         expect(spy).toHaveBeenCalledWith(name, opts);
     });
