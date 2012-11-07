@@ -1,5 +1,6 @@
 Generator = require('../src/Generator')
   , async = require('async')
+  , fs    = require('fs')
 ;
 
 describe('Generator', function () {
@@ -93,6 +94,105 @@ describe('Generator', function () {
         childA.run();
 
         expect(spy).toHaveBeenCalledWith(name, opts);
+    });
+
+    describe('built-in helpers', function () {
+
+        describe('mkdir', function () {
+
+            var generator;
+
+            beforeEach(function () {
+                generator = new (Generator.extend({
+                    key: 'foobar',
+                    create: function (name, options) {
+                        this.mkdir(options.target);
+                    }
+                }));
+            });
+
+            it('creates directories', function () {
+
+                var target = './spec/fixtures/up_test';
+
+                generator.create('foo', { target: target });
+                generator.run();
+
+                waitsFor(function () {
+                    if (fs.existsSync(target)) {
+                        expect(fs.statSync(target).isDirectory());
+                        fs.rmdirSync(target);
+                        return true;
+                    }
+                });
+            });
+
+            it('can be reversed', function () {
+                
+                var target = './spec/fixtures/down_test';
+
+                fs.mkdirSync(target);
+
+                generator.destroy('foo', { target: target });
+                generator.run();
+
+                waitsFor(function () {
+                    return !fs.existsSync(target);
+                }, 1000);
+
+            });
+        });
+
+        describe('template', function () {
+
+            var generator;
+
+            var options = {
+                src: 'template.txt',
+                dst: 'spec/fixtures/hello_world.txt',
+                subject: { 
+                    helloWorld: 'Hello, World!' 
+                }
+            };
+
+            beforeEach(function () {
+                generator = new (Generator.extend({
+                    key: 'foobar',
+                    create: function (name, opts) {
+                        this.generatorDir = function () { 
+                            return 'spec/fixtures';
+                        };
+                        this.template(opts.src, opts.dst, opts.subject);
+                    }
+                }));
+            });
+
+            it('populates templates', function () {
+                generator.create('foobar', options);
+                generator.run();
+
+                waitsFor(function () {
+                    var content;
+                    if (fs.existsSync(options.dst)) {
+                        content = fs.readFileSync(options.dst, 'utf8');
+                        expect(content.trim()).toEqual(options.subject.helloWorld);
+                        fs.unlinkSync(options.dst);
+                        return true;
+                    }
+                }, 1000);
+            });
+
+            it('can be reversed', function () {
+                options.dst = 'spec/fixtures/foobar.txt';
+                fs.writeFileSync(options.dst, options.subject.helloWorld, 'utf8');
+                generator.destroy('foobar', options);
+                generator.run();
+                
+                waitsFor(function () {
+                    return !fs.exists(options.dst);
+                }, 1000);
+            });
+        });
     });
 
     describe('Extensions', function () {
