@@ -125,7 +125,7 @@ var Generator = function () {
             fs.readFile(self.templateDir() + '/' + src, function (err, content) {
 
                 if (err) {
-		    self.error(err);
+                    self.error(err);
                     return result('Failed reading template at ' + src);
                 }
 
@@ -137,12 +137,12 @@ var Generator = function () {
 
                 fs.writeFile(dst, content, undefined, function (err) {
                     if (err) {
-			self.error(err);
-			return result('Destination file ' + dst + ' exists. Please resolve conflict.');
+                        self.error(err);
+                        return result('Destination file ' + dst + ' exists. Please resolve conflict.');
                     } else {
-		      self.success('Created ' + dst)
-		      result(null);
-		    }
+                        self.success('Created ' + dst)
+                        return result(null);
+                    }
                 });
                 
             });
@@ -165,7 +165,7 @@ var Generator = function () {
                     self.success('Removed ' + dst)
                     result();
                 } else {
-		    self.error(err);
+                    self.error(err);
                     result('Failed deleting ' + dst);
                 }
             });
@@ -184,10 +184,10 @@ var Generator = function () {
 
             fs.mkdir(path, undefined, function (err) {
                 if (!err) {
-		    self.success('Created directory ' + path)
+                    self.success('Created directory ' + path)
                     result();
                 } else {
-		    self.error(err);
+                    self.error(err);
                     result(path + ' exists. Please resolve this manually.');
                 }
             });
@@ -210,7 +210,7 @@ var Generator = function () {
                     self.success('Removed ' + path);
                     result();
                 } else {
-		    self.error(err);
+                    self.error(err);
                     result('Failed removing ' + path);
                 }
             });
