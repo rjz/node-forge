@@ -135,10 +135,10 @@ var Generator = function () {
                     content = _.template(content, obj);
                 }
 
-                fs.writeFile(dst, content, 'utf-8', function (err) {
+                fs.writeFile(dst, content, undefined, function (err) {
                     if (err) {
 			self.error(err);
-                        return result('Destination file ' + dst + ' exists. Please resolve conflict.');
+			return result('Destination file ' + dst + ' exists. Please resolve conflict.');
                     } else {
 		      self.success('Created ' + dst)
 		      result(null);
@@ -182,13 +182,13 @@ var Generator = function () {
         
         this.queue(function (result) {
 
-            fs.mkdir(path, 0777, function (err) {
+            fs.mkdir(path, undefined, function (err) {
                 if (!err) {
 		    self.success('Created directory ' + path)
                     result();
                 } else {
 		    self.error(err);
-                    // result(path + ' exists. Please resolve this manually.');
+                    result(path + ' exists. Please resolve this manually.');
                 }
             });
         });
