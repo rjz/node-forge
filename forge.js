@@ -32,6 +32,7 @@ var generators = require('./generators/all');
 	if (_.include(['create','destroy'], generatorAction)) {
 		if (_.has(generators, generatorName)) {
       generator = generators[generatorName]
+      generator.verbose = true;
       generator[generatorAction](objectName, objectOptions);
       generator.run();
 		} else {

@@ -11,6 +11,13 @@ var Generator = function () {
     // keep a list of child classes available
     var _children = {};
 
+    // log messages if generator.verbose == true
+    var _log = function (generator, message) {
+        if (generator.verbose && console) {
+            console.log(message);
+        }
+    };
+
     // wear a nametag when performing logging
     var _prefix = function (g) {
         return '(' + g.key + '): ';
@@ -40,7 +47,7 @@ var Generator = function () {
      *  @param  {String}    message the notice to print
      */
     Generator.prototype.notice = function (message) {
-        console.log(_prefix(this) + (message || '[no message]'));
+        _log(this, _prefix(this) + (message || '[no message]'));
     };
 
     /**
@@ -48,7 +55,7 @@ var Generator = function () {
      *  @param  {String}    message the error to print
      */
     Generator.prototype.error = function (message) {
-        console.log('! ' + _prefix(this) + (message || '[no message]'));
+        _log(this, '! ' + _prefix(this) + (message || '[no message]'));
         process.exit();
     };
 
@@ -57,7 +64,7 @@ var Generator = function () {
      *  @param  {String}    message the message to print
      */
     Generator.prototype.success = function (message) {
-        console.log(_prefix(this) + (message || '[no message]'));
+        _log(this, _prefix(this) + (message || '[no message]'));
     };
 
     /**
