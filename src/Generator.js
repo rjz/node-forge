@@ -125,6 +125,7 @@ var Generator = function () {
             fs.readFile(self.templateDir() + '/' + src, function (err, content) {
 
                 if (err) {
+		    self.error(err);
                     return result('Failed reading template at ' + src);
                 }
 
@@ -134,14 +135,14 @@ var Generator = function () {
                     content = _.template(content, obj);
                 }
 
-                fs.exists(dst, function (exists) {
-                    if (exists) {
-                        return result('Destination file ' + dst + ' exists. Please resolve conflict.');
-                    }
-
-                    fs.writeFile(dst, content);
-                    self.success('Created ' + dst)
-                    result(null);
+                fs.writeFile(dst, content, undefined, function (err) {
+                    if (err) {
+			self.error(err);
+			return result('Destination file ' + dst + ' exists. Please resolve conflict.');
+                    } else {
+		      self.success('Created ' + dst)
+		      result(null);
+		    }
                 });
                 
             });
@@ -159,12 +160,12 @@ var Generator = function () {
         var self = this;
 
         this.queue(function (result) {
-            fs.exists(dst, function (exists) {
-                if (exists) {
-                    fs.unlink(dst);
+            fs.unlink(dst, function (err) {
+                if (!err) {
                     self.success('Removed ' + dst)
                     result();
                 } else {
+		    self.error(err);
                     result('Failed deleting ' + dst);
                 }
             });
@@ -181,14 +182,13 @@ var Generator = function () {
         
         this.queue(function (result) {
 
-            fs.exists(path, function (exists) {
-                if (exists) {
-                    result(path + ' exists. Please resolve this manually.');
-                } else {
-                    // FIXME: handle errors
-                    fs.mkdir(path);
-                    self.success('Created directory ' + path)
+            fs.mkdir(path, undefined, function (err) {
+                if (!err) {
+		    self.success('Created directory ' + path)
                     result();
+                } else {
+		    self.error(err);
+                    result(path + ' exists. Please resolve this manually.');
                 }
             });
         });
@@ -205,12 +205,12 @@ var Generator = function () {
         var self = this;
         
         this.queue(function (result) {
-            fs.exists(path, function (exists) {
-                if (exists) {
-                    fs.rmdir(path);
+            fs.rmdir(path, function (err) {
+                if (!err) {
                     self.success('Removed ' + path);
                     result();
                 } else {
+		    self.error(err);
                     result('Failed removing ' + path);
                 }
             });
