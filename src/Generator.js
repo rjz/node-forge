@@ -273,6 +273,16 @@ var Generator = function () {
     };
 
     /**
+     * Reverse the Queue ordering. 
+     * This will allow the destroy generator action to remove files first and 
+     * then empty directories
+     */
+
+    Generator.prototype.reverseQueue = function () {
+        this.q = this.q.reverse();
+    };
+
+    /**
      *  Extend function for creating junior generators. Not self-propagating,
      *  but probably should be.
      *
