@@ -34,6 +34,9 @@ var generators = require('./generators/all');
       generator = generators[generatorName]
       generator.verbose = true;
       generator[generatorAction](objectName, objectOptions);
+      if (generatorAction == 'destroy') {
+        generator.reverseQueue();
+      }
       generator.run();
 		} else {
 			_error('unknown generator "' + generatorName + '"');
